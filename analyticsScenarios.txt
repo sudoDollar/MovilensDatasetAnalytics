@@ -1,0 +1,13 @@
+Top 10 movie for a particular age range
+
+Top 10 movies by gender
+
+Top 3 professions for each movie(Will require pre analytics since it is a big task to do real time)
+
+Top 10 movies by Genre
+
+Most liked genre by age group (Pre-process)
+
+Top rated movies by genere
+
+Top rated movies by age group
