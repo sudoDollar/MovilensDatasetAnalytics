@@ -5,17 +5,29 @@ import json
 import plotly
 import plotly.express as px
 from dateutil.relativedelta import relativedelta
+import shutil
 
 
+from pyspark.sql import SparkSession
+from sparkengine import SparkEngine
+
+spark = SparkSession.builder.appName("movielens").master('local') \
+                    .config("spark.mongodb.input.uri", "mongodb://127.0.0.1:27017/movielens") \
+                    .config("spark.mongodb.output.uri", "mongodb://127.0.0.1:27017/movielens") \
+                    .config('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.12:3.0.1') \
+                    .getOrCreate()
+
+sc = spark.sparkContext
+se = SparkEngine(spark)
 
 app = Flask(__name__)
 
 @app.route('/')
 @app.route('/home')
 def home(msg = ''):
-    
-    
-    return render_template('home.html', msg = msg)
+
+    movie_list = list(se.get_movies_by_year("1989", 20))
+    return render_template('home.html', msg = str(movie_list))
 
 
 @app.route('/graphs')
