@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 import datetime
 import pandas as pd
 import json
@@ -30,12 +30,18 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/home')
 def home(msg = ''):
+    years = list(me.getYearList())
+    return render_template('home.html',years = years, msg = msg)
 
-    movie_list = list(se.get_movies_by_year("1989", 20))
-    
-    genereList = list(me.getGenereList())
-    
-    return render_template('home.html', msg = str(genereList))
+
+@app.route('/api/movies', methods=['GET'])
+def get_movies():
+    # Get the 'year' query parameter
+    year = request.args.get('year')
+    # Fetch the movies from the database
+    movies = list(se.get_movies_by_year(year))
+    # Convert the movies to a JSON response
+    return jsonify(movies)
 
 
 @app.route('/graphs')

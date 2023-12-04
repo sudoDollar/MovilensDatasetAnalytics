@@ -10,4 +10,6 @@ class MongoEngine:
     
     def getGenereList(self):
         return [genre["genre"] for genre in self.db["genres"].find({}, {"genre": 1, "_id": 0})]
-        
+    
+    def getYearList(self):
+        return [year["year"] for year in self.db["years"].find({}, {"year": 1, "_id": 0})]

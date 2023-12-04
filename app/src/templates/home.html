@@ -31,20 +31,55 @@
           <br><br>
           <div class="row g-0">
             <div class="col-lg-6">
-              <h3>Top 20 rated movies</h3>
+              <h3>Top 10 rated movies for:</h3>
+              <select class="form-control form-control-sm" id="yearSelect" onchange="refreshTable()">
+                {% for year in years %}
+                <option>{{ year }}</option>
+                {% endfor %}
+              </select>
+              <br><br>
+              <div class="form-group">
+              </div>
+              <script>
+                window.onload = function() {
+                  refreshTable();
+                };
+
+                function refreshTable() {
+                  // AJAX code to fetch new data and update the table
+                  var year = document.getElementById("yearSelect").value;
+                  var url = "/api/movies?year=" + year;
+
+                  // Make an AJAX request
+                  var xhr = new XMLHttpRequest();
+                  xhr.open("GET", url, true);
+                  xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                      // Update the table with the new data
+                      var movies = JSON.parse(xhr.responseText);
+                      var tableBody = document.querySelector("#dtBasicExample tbody");
+                      tableBody.innerHTML = "";
+
+                      movies.forEach(function(movie) {
+                        var row = document.createElement("tr");
+                        var col1 = document.createElement("td");
+                        col1.textContent = movie;
+                        row.appendChild(col1);
+                        tableBody.appendChild(row);
+                      });
+                    }
+                  };
+                  xhr.send();
+                }
+              </script>
+              </script>
               <br><br>
               <div class="table-wrapper-scroll-y my-custom-scrollbar">
                 <table id="dtBasicExample" class="table mx-auto table-sm table-hover table-dark" style="width: 100%;"
                   cellspacing="0" width="100%">
                   <thead>
                     <tr>
-                      <th class="th-sm">Column 1
-                      </th>
-                      <th class="th-sm">Column 2
-                      </th>
-                      <th class="th-sm">Column n
-                      </th>
-                      <th></th>
+                      <th class="th-sm">Title</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -52,6 +87,7 @@
                 </table>
               </div>
             </div>
+
             <div class="col-lg-6">
 
               <h3>Dashboard 2</h3>
