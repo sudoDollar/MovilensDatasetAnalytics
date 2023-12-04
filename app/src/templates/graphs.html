@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card-body p-md-5 mx-md-4 " align="center">
+
+  <h2 class="mt-1 mb-5 pb-1">Bioreactor Data</h2>
+  <div class="card m-auto" style="width: 90%; height: 70%;">
+    <div class="card-body">
+
+      <div class="row">
+        <div class="col-sm">
+          <input id="datetimes" name="datetimes" style="width: 80%;" />
+          <script>
+            $(function () {
+              $('input[name="datetimes"]').daterangepicker({
+                timePicker: true,
+                startDate: moment().startOf('month').add(-1, 'month'),
+                endDate: moment(),
+                locale: {
+                  format: 'MM/DD/YYYY hh:mm A'
+                }
+              });
+            });
+          </script>
+          <button class="btn-sm btn-primary" type="reset" onclick="cb($('#reactorData').val())">Refresh Data</button>
+        </div>
+        <div class="col-sm"><a href="{{url_for('exportToCSV')}}" id="exportCSV" class="btn btn-primary"
+            type="reset">Export To CSV</a></div>
+      </div>
+      <div id="chart1" style="height: 90%;">
+      </div>
+      <select id="reactorData" class="form-select" aria-label="Default select example" onchange="cb(this.value)">
+        <option selected value="Temperature">Temperature</option>
+        <option value="pH">pH</option>
+        <option value="Distilled Oxygen">Distilled Oxygen</option>
+        <option value="Pressure">Pressure</option>
+      </select>
+    </div>
+  </div>
+</div>
+<script>
+  var graph = {{ graphJSON | safe}};
+  Plotly.plot("chart1", graph, {})
+</script>
+
+{% endblock %}

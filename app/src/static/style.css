@@ -1,0 +1,13 @@
+.form-group.required .control-label:after { 
+    content:"*";
+    color:red;
+ }
+
+ .my-custom-scrollbar {
+    position: relative;
+    height: 400px;
+    overflow: auto;
+    }
+    .table-wrapper-scroll-y {
+    display: block;
+    }

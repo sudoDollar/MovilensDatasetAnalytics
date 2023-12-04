@@ -1,47 +1,51 @@
-from flask import Flask, jsonify, request
-import requests
+from flask import Flask, render_template, request, redirect, url_for, flash
+import datetime
+import pandas as pd
+import json
+import plotly
+import plotly.express as px
+from dateutil.relativedelta import relativedelta
+
+
 
 app = Flask(__name__)
 
-# Databricks workspace URL and token
-databricks_url = "https://dbc-2f2560fd-e86a.cloud.databricks.com/?o=8200463898314705"
-token = "dapi502d8d59361c3460ea5792cec587a481"
-
-# Example Spark SQL query
-spark_sql_query = "SELECT * FROM moviesTable"
-
-@app.route('/query', methods=['POST'])
-def query_databricks():
-    # Retrieve query parameters from the request
+@app.route('/')
+@app.route('/home')
+def home(msg = ''):
     
-    # Create a REST API endpoint for submitting Spark SQL queries
-    endpoint = f"{databricks_url}/api/2.0/sql/endpoints/execute-query"
-    print(endpoint)
-    # Define the query payload
-    payload = {
-        "language": "sql",
-        "clusterId": "your_cluster_id",
-        "context": "your_sql_context_id",
-        "query": spark_sql_query,
-        # Add any other parameters or configurations as needed
-    }
+    
+    return render_template('home.html', msg = msg)
 
-    # Set up headers with the Databricks token
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }
 
-    # Make the request to Databricks
-    response = requests.post(endpoint, json=payload, headers=headers)
+@app.route('/graphs')
+def graphs():
+    return render_template('graphs.html', graphJSON = getGraphJSON())
 
-    # Handle the response
-    if response.status_code == 200:
-        result = response.json()
-        # Process the result and return it as needed
-        return jsonify(result)
-    else:
-        return jsonify({"error": f"Query failed with status code {response.status_code}"})
+@app.route('/callback', methods = ['POST','GET'])
+def cb():
+    dateRange = request.args.get('dateRange')
+    startDate, endDate = dateRange.split('-')
+    format = "%m/%d/%Y %I:%M %p"
+    startDate = datetime.datetime.strptime(startDate.rstrip().lstrip(), format)
+    endDate = datetime.datetime.strptime(endDate.rstrip().lstrip(), format)
+    tableName = request.args.get('tableName')
+    return getGraphJSON(tableName, startDate, endDate)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
+
+#generate graph and it's JSON to pass to the html template 
+#startDate and endDate to load data for user defined time period
+#Change this function as per requirement. Currently it reads from sql table and returns JSON
+def getGraphJSON(tableName: str = 'Temperature', startDate: datetime = (datetime.datetime.now() + relativedelta(months=-1)), endDate: datetime = datetime.datetime.now()):
+    conn = get_db_connection()
+    psqlTable = constants.dropdownTableMap[tableName]
+    query = 'select time,value FROM public.\"{0}\" where time > timestamp \'{1}\' and time < timestamp \'{2}\' order by time;'.format(psqlTable, startDate, endDate)
+    global dataFrame
+    dataFrame = pd.read_sql(query,conn)
+    conn.close()
+    global dfMetadata
+    dfMetadata = '{0}_{1}_{2}'.format(tableName, startDate, endDate).replace(" ", "_")
+    fig = px.line(dataFrame,x='time',y='value')
+    graphJSON = json.dumps(fig,cls = plotly.utils.PlotlyJSONEncoder)
+    return graphJSON
