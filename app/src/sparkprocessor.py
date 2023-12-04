@@ -6,47 +6,110 @@ from Utils import Utils
 
 class SparkDataProcessor:
 
+    genres = []
+
     def __init__(self, spark):
         self.spark = spark
-
-    def load_data_into_db(self):
+        self.ratings_rdd = spark.sparkContext.textFile(Utils.RATINGS_FILE_PATH)
+        self.movies_rdd = spark.sparkContext.textFile(Utils.MOVIE_FILE_PATH)
+        self.users_rdd = spark.sparkContext.textFile(Utils.USERS_FILE_PATH)
+        self.data_clean = False
+        
+    def load_clean_data_toDF(self):
+        #Movies
         df = self.spark.read.csv(Utils.MOVIE_FILE_PATH, sep='::', schema='MovieID int, oldTitle string, combinedGenres string')
         df = df.withColumn("len", length(col("oldtitle")))
         final_df = df.withColumn("Title", expr("substring(oldTitle, 1, len - 7)")).withColumn("Year", expr("substring(oldTitle, len - 4, 4)")).withColumn("Genres", split("combinedGenres", '\\|'))
         self.movies_df = final_df.drop("oldTitle", "oldTitle_Modified", "Title_Year", "combinedGenres", "len")
-        self.movies_df.write.format("mongo").option("database", "movielens").option("collection", "movies").mode("overwrite").save()
 
-
-        df = spark.read.csv(Utils.RATINGS_FILE_PATH, sep='::', schema='UserID int, MovieID int, Rating int, Timestamp long')
+        #Ratings
+        df = self.spark.read.csv(Utils.RATINGS_FILE_PATH, sep='::', schema='UserID int, MovieID int, Rating int, Timestamp long')
         df = df.withColumn("Time", from_unixtime(col("Timestamp"), "yyyy-MM-dd HH:mm:ss"))
         self.ratings_df = df.drop("Timestamp")
+
+        #Users
+        self.users_df = self.spark.read.csv(Utils.USERS_FILE_PATH, sep='::', schema='UserID int, Gender string, Age int, Occupation int, Zipcode int')
+
+        self.data_clean = True
+    
+    def load_data_into_db(self):
+        if self.data_clean == False:
+            print("Clean data and load into DF first")
+            return False
+        
+        #Movies
+        self.movies_df.write.format("mongo").option("database", "movielens").option("collection", "movies").mode("overwrite").save()
+
+        #Ratings
         self.ratings_df.write.format("mongo").option("database", "movielens").option("collection", "ratings").mode("overwrite").save()
 
-        self.users_df = spark.read.csv(Utils.USERS_FILE_PATH, sep='::', schema='UserID int, Gender string, Age int, Occupation int, Zipcode int')
+        #Users
         self.users_df.write.format("mongo").option("database", "movielens").option("collection", "users").mode("overwrite").save()
 
+        return True
+
     def save_all_genres(self):
-        movies_rdd = self.spark.sparkContext.textFile(Utils.MOVIE_FILE_PATH)
-        genres_rdd = movies_rdd.map(lambda x: x.split("::")[2])
+        genres_rdd = self.movies_rdd.map(lambda x: x.split("::")[2])
         genres_rdd = genres_rdd.flatMap(lambda x: x.split("|"))
         genres_rdd = genres_rdd.map(lambda x: Row(genre = x))
         distinct_genres_rdd = genres_rdd.distinct().sortBy(lambda x: x)
+        self.genres = list(distinct_genres_rdd.flatMap(lambda x: x).collect())
 
         # Save RDD to MongoDB collection
         distinct_genres_rdd.toDF().write.format("mongo").option("database", "movielens").option("collection", "genres").mode("overwrite").save()
     
     def save_all_years(self):
-        movies_rdd = self.spark.sparkContext.textFile(Utils.MOVIE_FILE_PATH)
-        title_year_rdd = movies_rdd.map(lambda x: x.split("::")[1])
+        title_year_rdd = self.movies_rdd.map(lambda x: x.split("::")[1])
         year_rdd = title_year_rdd.map(lambda x: x[-5:-1]).map(lambda x: Row(year = x))
         distinct_years_rdd = year_rdd.distinct().sortBy(lambda x: x)
 
         # Save RDD to MongoDB collection
         distinct_years_rdd.toDF().write.format("mongo").option("database", "movielens").option("collection", "years").mode("overwrite").save()
 
+    def save_top_n_most_viewed_movies(self, num):
+        movies = self.ratings_rdd.map(lambda x: x.split("::")[1])
+        movies = movies.map(lambda x: (x,1))
+        movies = movies.reduceByKey(lambda x,y: x + y)
+        top_num_movies = spark.sparkContext.parallelize(movies.sortBy(lambda x: x[1]).take(num))
+        
+        movies_rdd = spark.sparkContext.textFile(Utils.MOVIE_FILE_PATH)
+        title_rdd = movies_rdd.map(lambda x: (x.split("::")[0], x.split("::")[1][:-7]))
+        top_num_movies_title = title_rdd.join(top_num_movies).sortBy(lambda x: x[1]).map(lambda x: x[1][0]).map(lambda x: Row(title = x))
 
+        # Save RDD to MongoDB collection
+        top_num_movies_title.toDF().write.format("mongo").option("database", "movielens").option("collection", "top_viewed_movies").mode("overwrite").save()
+
+    def save_top_n_most_liked_movies_by_gender(self, num: int, gender: str):
+        join1 = self.ratings_df.join(self.users_df, on="UserID" , how="inner").filter(col("Gender") == gender)
+        join2 = join1.join(self.movies_df, on="MovieID", how="inner")
+        result = join2.groupBy("MovieID", "Title").agg(F.avg("Rating").alias("AvgRating")).orderBy(col("AvgRating").desc()).limit(num)
+        result = result.drop("MovieID")
+        result.write.format("mongo").option("database", "movielens").option("collection", "top_{}_most_liked_movies_by_{}".format(num,gender)).mode("overwrite").save()
     
-    
+    def save_top_n_most_viewed_movies_by_gender(self, num: int, gender: str):
+        join1 = self.ratings_df.join(self.users_df, on="UserID" , how="inner").filter(col("Gender") == gender)
+        join2 = join1.join(self.movies_df, on="MovieID", how="inner")
+        result = join2.groupBy("MovieID", "Title").agg(F.count("UserID").alias("Viewers")).orderBy(col("Viewers").desc()).limit(num)
+        result = result.drop("MovieID")
+        result.write.format("mongo").option("database", "movielens").option("collection", "top_{}_most_viewed_movies_by_{}".format(num,gender)).mode("overwrite").save()
+
+    def save_top_n_most_viewed_movies_by_genre(self, num: int, genre: str):
+        movies = self.movies_df.select("MovieID", "Title", explode("Genres").alias("Genre")).filter(col("Genre") == genre)
+        join1 = self.ratings_df.join(movies, on="MovieID", how="inner")
+        result = join1.groupBy("MovieID", "Title").agg(F.count("UserID").alias("Viewers")).orderBy(col("Viewers").desc()).limit(num)
+        result.drop("MovieID")
+        result.write.format("mongo").option("database", "movielens").option("collection", "top_{}_most_viewed_movies_by_{}".format(num,genre)).mode("overwrite").save()
+
+    def save_top_n_most_liked_movies_by_genre(self, num: int, genre: str):
+        movies = self.movies_df.select("MovieID", "Title", explode("Genres").alias("Genre")).filter(col("Genre") == genre)
+        join1 = self.ratings_df.join(movies, on="MovieID", how="inner")
+        result = join1.groupBy("MovieID", "Title").agg(F.avg("Rating").alias("AvgRating")).orderBy(col("AvgRating").desc()).limit(num)
+        result.drop("MovieID")
+        result.write.format("mongo").option("database", "movielens").option("collection", "top_{}_most_liked_movies_by_{}".format(num,genre)).mode("overwrite").save()
+
+
+
+
 if __name__ == '__main__':
 
     spark = SparkSession.builder.appName("movielens").master('local') \
@@ -56,6 +119,19 @@ if __name__ == '__main__':
                         .getOrCreate()
 
     sparkdp = SparkDataProcessor(spark)
+    sparkdp.load_clean_data_toDF()
     sparkdp.load_data_into_db()
     sparkdp.save_all_genres()
     sparkdp.save_all_years()
+    sparkdp.save_top_n_most_viewed_movies(10)
+    sparkdp.save_top_n_most_liked_movies_by_gender(10, "M")
+    sparkdp.save_top_n_most_liked_movies_by_gender(10, "F")
+    sparkdp.save_top_n_most_viewed_movies_by_gender(10, "M")
+    sparkdp.save_top_n_most_viewed_movies_by_gender(10, "F")
+    for genre in sparkdp.genres:
+        sparkdp.save_top_n_most_viewed_movies_by_genre(10, genre)
+        sparkdp.save_top_n_most_liked_movies_by_genre(10, genre)
+
+
+    
+
