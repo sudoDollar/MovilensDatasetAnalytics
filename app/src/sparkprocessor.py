@@ -34,6 +34,15 @@ class SparkDataProcessor:
 
         # Save RDD to MongoDB collection
         distinct_genres_rdd.toDF().write.format("mongo").option("database", "movielens").option("collection", "genres").mode("overwrite").save()
+    
+    def save_all_years(self):
+        movies_rdd = self.spark.sparkContext.textFile(Utils.MOVIE_FILE_PATH)
+        title_year_rdd = movies_rdd.map(lambda x: x.split("::")[1])
+        year_rdd = title_year_rdd.map(lambda x: x[-5:-1]).map(lambda x: Row(year = x))
+        distinct_years_rdd = year_rdd.distinct().sortBy(lambda x: x)
+
+        # Save RDD to MongoDB collection
+        distinct_years_rdd.toDF().write.format("mongo").option("database", "movielens").option("collection", "years").mode("overwrite").save()
 
 
     
@@ -49,3 +58,4 @@ if __name__ == '__main__':
     sparkdp = SparkDataProcessor(spark)
     sparkdp.load_data_into_db()
     sparkdp.save_all_genres()
+    sparkdp.save_all_years()
