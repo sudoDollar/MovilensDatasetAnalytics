@@ -6,10 +6,9 @@ import plotly
 import plotly.express as px
 from dateutil.relativedelta import relativedelta
 import shutil
-
-
 from pyspark.sql import SparkSession
 from sparkengine import SparkEngine
+from mongoengine import MongoEngine
 
 spark = SparkSession.builder.appName("movielens").master('local') \
                     .config("spark.mongodb.input.uri", "mongodb://127.0.0.1:27017/movielens") \
@@ -20,14 +19,23 @@ spark = SparkSession.builder.appName("movielens").master('local') \
 sc = spark.sparkContext
 se = SparkEngine(spark)
 
+me = MongoEngine()
+
 app = Flask(__name__)
+
+
+
+
 
 @app.route('/')
 @app.route('/home')
 def home(msg = ''):
 
     movie_list = list(se.get_movies_by_year("1989", 20))
-    return render_template('home.html', msg = str(movie_list))
+    
+    genereList = list(me.getGenereList())
+    
+    return render_template('home.html', msg = str(genereList))
 
 
 @app.route('/graphs')

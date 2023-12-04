@@ -1,0 +1,6 @@
+flask
+pymongo
+spark
+pandas
+json
+plotly

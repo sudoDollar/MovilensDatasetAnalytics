@@ -1,4 +1,4 @@
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, Row
 from pyspark.sql.functions import col, regexp_replace, split, explode, length, expr, from_unixtime
 import pyspark.sql.functions as F
 import shutil
@@ -14,27 +14,30 @@ class SparkDataProcessor:
         df = df.withColumn("len", length(col("oldtitle")))
         final_df = df.withColumn("Title", expr("substring(oldTitle, 1, len - 7)")).withColumn("Year", expr("substring(oldTitle, len - 4, 4)")).withColumn("Genres", split("combinedGenres", '\\|'))
         self.movies_df = final_df.drop("oldTitle", "oldTitle_Modified", "Title_Year", "combinedGenres", "len")
-        self.movies_df.write.format("mongo").option("database", "movielens").option("collection", "movies").save()
+        self.movies_df.write.format("mongo").option("database", "movielens").option("collection", "movies").mode("overwrite").save()
 
 
         df = spark.read.csv(Utils.RATINGS_FILE_PATH, sep='::', schema='UserID int, MovieID int, Rating int, Timestamp long')
         df = df.withColumn("Time", from_unixtime(col("Timestamp"), "yyyy-MM-dd HH:mm:ss"))
         self.ratings_df = df.drop("Timestamp")
-        self.ratings_df.write.format("mongo").option("database", "movielens").option("collection", "ratings").save()
+        self.ratings_df.write.format("mongo").option("database", "movielens").option("collection", "ratings").mode("overwrite").save()
 
         self.users_df = spark.read.csv(Utils.USERS_FILE_PATH, sep='::', schema='UserID int, Gender string, Age int, Occupation int, Zipcode int')
-        self.users_df.write.format("mongo").option("database", "movielens").option("collection", "users").save()
+        self.users_df.write.format("mongo").option("database", "movielens").option("collection", "users").mode("overwrite").save()
 
     def save_all_genres(self):
         movies_rdd = self.spark.sparkContext.textFile(Utils.MOVIE_FILE_PATH)
         genres_rdd = movies_rdd.map(lambda x: x.split("::")[2])
         genres_rdd = genres_rdd.flatMap(lambda x: x.split("|"))
+        genres_rdd = genres_rdd.map(lambda x: Row(genre = x))
         distinct_genres_rdd = genres_rdd.distinct().sortBy(lambda x: x)
-        output_path = "processed_data/distinct_genres"
-        shutil.rmtree(output_path, ignore_errors=True)
-        distinct_genres_rdd.saveAsTextFile(output_path)
+
+        # Save RDD to MongoDB collection
+        distinct_genres_rdd.toDF().write.format("mongo").option("database", "movielens").option("collection", "genres").mode("overwrite").save()
 
 
+    
+    
 if __name__ == '__main__':
 
     spark = SparkSession.builder.appName("movielens").master('local') \
