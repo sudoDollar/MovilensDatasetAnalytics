@@ -154,6 +154,22 @@ class SparkDataProcessor:
         result = result.filter(col("Count") == col("max_count")).drop("max_count")
         result.write.format("mongo").option("database", "movielens").option("collection", "occupation_genre_max").mode("overwrite").save()
 
+    def save_age_genre_distribution(self):
+        movies = self.movies_df.select("MovieID", explode("Genres").alias("Genre"))
+        my_udf = F.udf(Utils.get_age_group, StringType())
+        users = self.users_df.withColumn("AgeGroup", my_udf("Age"))
+        join1 = self.ratings_df.join(users, on="UserID", how="inner")
+        join2 = join1.join(movies, on="MovieID", how="inner")
+        result = join2.groupBy("AgeGroup","Genre").agg(F.count("UserID").alias("Count"))
+        result.write.format("mongo").option("database", "movielens").option("collection", "age_genre_distribution").mode("overwrite").save()
+
+        window_spec = Window.partitionBy("AgeGroup")
+        max_count_column = F.max("Count").over(window_spec)
+        result = result.withColumn("max_count", max_count_column)
+        result = result.filter(col("Count") == col("max_count")).drop("max_count")
+        result.write.format("mongo").option("database", "movielens").option("collection", "age_genre_max").mode("overwrite").save()
+
+
 
 if __name__ == '__main__':
 
@@ -181,5 +197,6 @@ if __name__ == '__main__':
     sparkdp.save_state_genre_distribution()
     sparkdp.save_all_movie_ratings()
     sparkdp.save_occupation_genre_distribution()
+    sparkdp.save_age_genre_distribution()
     
 
