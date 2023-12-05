@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+import re
 
 class MongoEngine:
 
@@ -12,7 +13,7 @@ class MongoEngine:
         return [genre["genre"] for genre in self.db["genres"].find({}, {"genre": 1, "_id": 0})]
     
     def getYearList(self):
-        return [year["year"] for year in self.db["years"].find({}, {"year": 1, "_id": 0})]
+        return sorted([year["year"] for year in self.db["years"].find({}, {"year": 1, "_id": 0})], reverse=True)
     
     def get_top_viewed_by_filter(self, filter):
         if not filter or filter == "":
@@ -23,3 +24,11 @@ class MongoEngine:
     
     def getTop10Movies(self):
         return [[movie["Title"],movie["Views"]] for movie in self.db["top_viewed_movies"].find({}, {"Title": 1, "Views": 1 , "_id": 0})]
+    
+
+    def getTopRatedMovies(self, movieFilter=None):
+        if movieFilter and movieFilter != "":
+            regex_pattern = re.compile(movieFilter, re.IGNORECASE)
+            return [[movie["Title"], movie["AvgRating"], movie["Year"]] for movie in self.db["all_movie_ratings"].find({"Title": {"$regex": regex_pattern}}, {"Title": 1, "AvgRating": 1, "Year": 1, "_id": 0}).limit(20)]
+        else:
+            return [[movie["Title"], movie["AvgRating"], movie["Year"]] for movie in self.db["all_movie_ratings"].find({}, {"Title": 1, "AvgRating": 1, "Year": 1, "_id": 0}).limit(20)]

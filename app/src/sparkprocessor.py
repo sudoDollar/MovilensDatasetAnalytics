@@ -125,13 +125,18 @@ class SparkDataProcessor:
         join1 = self.ratings_df.join(users, on="UserID", how="inner")
         join2 = join1.join(movies, on="MovieID", how="inner")
         result = join2.groupBy("State", "Genre").agg(F.count("UserID").alias("Count"))
-        result.write.format("mongo").option("database", "movielens").option("collection", "state_genre_distribution").mode("overwrite").save()
 
         window_spec = Window.partitionBy("State")
         max_count_column = F.max("Count").over(window_spec)
         result = result.withColumn("max_count", max_count_column)
         result = result.filter(col("Count") == col("max_count")).drop("max_count")
         result.write.format("mongo").option("database", "movielens").option("collection", "state_genre_distribution").mode("overwrite").save()
+        
+    def save_all_movie_ratings(self):
+        movies = self.movies_df.select("MovieID", "Title", "Year")
+        join1 = self.ratings_df.join(movies, on="MovieID", how="inner")
+        result = join1.groupBy("MovieID", "Title", "Year").agg(F.avg("Rating").alias("AvgRating")).orderBy(col("AvgRating").desc())
+        result.write.format("mongo").option("database", "movielens").option("collection", "all_movie_ratings").mode("overwrite").save()
 
 if __name__ == '__main__':
 
@@ -157,8 +162,6 @@ if __name__ == '__main__':
     sparkdp.save_movies_count_by_genre()
     sparkdp.save_movies_count_by_year()
     sparkdp.save_state_genre_distribution()
-
-
-
+    sparkdp.save_all_movie_ratings()
     
 

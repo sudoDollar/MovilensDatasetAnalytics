@@ -19,7 +19,3 @@ class SparkEngine:
                             .option("database", "movielens") \
                             .option("collection", "users") \
                             .load()
-
-    def get_movies_by_year(self, year, num=10):
-        movies = self.movies_df.select("Title").filter(self.movies_df["Year"] == int(year)).distinct()
-        return movies.rdd.flatMap(lambda x: x).take(num)

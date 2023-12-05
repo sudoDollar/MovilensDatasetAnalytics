@@ -37,11 +37,14 @@ def home(msg = ''):
 @app.route('/api/movies', methods=['GET'])
 def get_movies():
     # Get the 'year' query parameter
-    year = request.args.get('year')
+    movie = request.args.get('searchMovie')
     # Fetch the movies from the database
-    movies = list(se.get_movies_by_year(year))
-    # Convert the movies to a JSON response
-    return jsonify(movies)
+    movies = me.getTopRatedMovies(movie)
+    # Convert each movie item into a dictionary with proper fields
+    movies_dict = [{'title': movie[0], 'rating': movie[1], 'year': movie[2]} for movie in movies]
+    
+    # Convert the movies dictionary to a JSON response
+    return jsonify(movies_dict)
 
 @app.route('/api/movieFilter', methods=['GET'])
 def get_movies_filter():
@@ -62,9 +65,7 @@ def graphs():
 @app.route('/callback', methods = ['POST','GET'])
 def cb():
     filterCondition = request.args.get('filter')
-    
     graphData = getGraphJSON(filter = filterCondition)
-    print(filterCondition)
     return graphData
 
 

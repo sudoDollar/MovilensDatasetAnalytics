@@ -7,16 +7,15 @@
     integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
+<script src="{{ url_for('static', filename='js/homeScript.js') }}"></script>
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <a class="navbar-brand text-light">DBIM</a>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-item nav-link text-light active" href="{{ url_for('home') }}">Home<span
-          class="sr-only">(current)</span></a>
+            class="sr-only">(current)</span></a>
         <a class="nav-item nav-link text-light" href=""></a>
-        <a class="nav-item nav-link text-light" href="">Explore movies</a>
         <a class="nav-item nav-link text-light" href="{{ url_for('graphs') }}">Trends</a>
       </div>
     </div>
@@ -30,90 +29,50 @@
           </div>
           <br><br>
           <div class="row g-0">
+
             <div class="col-lg-6">
-              <h3>Top 10 rated movies for:</h3>
-              <select class="form-control form-control-sm" id="yearSelect" onchange="refreshTable()">
-                {% for year in years %}
-                <option>{{ year }}</option>
-                {% endfor %}
-              </select>
-              <br><br>
-              <div class="form-group">
-              </div>
-              <script>
-                window.onload = function() {
-                  refreshTable();
-                };
 
-                function refreshTable() {
-                  // AJAX code to fetch new data and update the table
-                  var year = document.getElementById("yearSelect").value;
-                  var url = "/api/movies?year=" + year;
-
-                  // Make an AJAX request
-                  var xhr = new XMLHttpRequest();
-                  xhr.open("GET", url, true);
-                  xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                      // Update the table with the new data
-                      var movies = JSON.parse(xhr.responseText);
-                      var tableBody = document.querySelector("#dtBasicExample tbody");
-                      tableBody.innerHTML = "";
-
-                      movies.forEach(function(movie) {
-                        var row = document.createElement("tr");
-                        var col1 = document.createElement("td");
-                        col1.textContent = movie;
-                        row.appendChild(col1);
-                        tableBody.appendChild(row);
-                      });
-                    }
-                  };
-                  xhr.send();
-                }
-              </script>
-              </script>
+              <h3>All time top 20 rated movies</h3>
               <br><br>
               <div class="table-wrapper-scroll-y my-custom-scrollbar">
-                <table id="dtBasicExample" class="table mx-auto table-sm table-hover table-dark" style="width: 100%;"
+                <table id="table1" class="table table-sm table-hover table-dark" style="width: 100%"
                   cellspacing="0" width="100%">
                   <thead>
                     <tr>
-                      <th class="th-sm">Title</th>
+                      <th class="th-sm">Title
+                      </th>
+                      <th class="th-sm">Average Rating(/5)
+                      </th>
+                      <th class="th-sm">Year Released
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
+
                   </tbody>
                 </table>
               </div>
             </div>
 
             <div class="col-lg-6">
-
-              <h3>Dashboard 2</h3>
+              <h3>Search for your favourite movie here:</h3>
+              <input type="text" id="searchMovie" placeholder="Type here">
+              <button type="submit" class="btn btn-primary" onclick="searchMovie()">Submit</button>
+              <br><br>
+              <div class="form-group">
+              </div>
               <br><br>
               <div class="table-wrapper-scroll-y my-custom-scrollbar">
-                <table id="dtBasicExample" class="table table-sm table-hover table-dark" style="width: 100%"
+                <table id="table2" class="table mx-auto table-sm table-hover table-dark" style="width: 100%;"
                   cellspacing="0" width="100%">
                   <thead>
                     <tr>
-                      <th class="th-sm">Col1
-                      </th>
-                      <th class="th-sm">Col2
-                      </th>
-                      <th class="th-sm">Col3
-                      </th>
-                      <th class="th-sm">Col4
-                      </th>
-                      <th class="th-sm">Coln
-                      </th>
-                      <th class="">Col6
-                      </th>
-                      <th></th>
+                      <th class="th-sm">Title</th>
+                      <th class="th-sm">Average Rating /5</th>
+                      <th class="th-sm">Year Released</th>
                     </tr>
                   </thead>
                   <tbody>
-                    
                   </tbody>
                 </table>
               </div>
