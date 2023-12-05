@@ -129,3 +129,20 @@ class Utils:
             return "66-70"
         else:
             return "80-Beyond"
+        
+    def get_age_group2(age: int) -> str:
+
+        if 1 <= age <= 10:
+            return "1-10"
+        elif 11 <= age <= 20:
+            return "11-20"
+        elif 21 <= age <= 30:
+            return "21-30"
+        elif 31 <= age <= 40:
+            return "31-40"
+        elif 41 <= age <= 50:
+            return "41-50"
+        elif 51 <= age <=60:
+            return "51-60"
+        else:
+            return "60-Beyond"

@@ -8,6 +8,9 @@ from Utils import Utils
 class SparkDataProcessor:
 
     genres = []
+    ageGroup = ["1-5", "6-10", "11-15", "16-20", "21-25", "26-30", "31-35", "36-40", "41-45", "46-50", "51-55", "56-60"]
+    ageGroup2 = ["1-10", "11-20", "21-30", "31-40", "41-50", "51-60"]
+
 
     def __init__(self, spark):
         self.spark = spark
@@ -169,6 +172,24 @@ class SparkDataProcessor:
         result = result.filter(col("Count") == col("max_count")).drop("max_count")
         result.write.format("mongo").option("database", "movielens").option("collection", "age_genre_max").mode("overwrite").save()
 
+    def save_top_n_most_liked_movies_by_age(self, num: int, age_group: str):
+        my_udf = F.udf(Utils.get_age_group2, StringType())
+        users = self.users_df.withColumn("AgeGroup", my_udf("Age"))
+        join1 = self.ratings_df.join(users, on="UserID" , how="inner").filter(col("AgeGroup") == age_group)
+        join2 = join1.join(self.movies_df, on="MovieID", how="inner")
+        result = join2.groupBy("MovieID", "Title").agg(F.avg("Rating").alias("AvgRating")).orderBy(col("AvgRating").desc()).limit(num)
+        result = result.drop("MovieID")
+        result.write.format("mongo").option("database", "movielens").option("collection", "top_{}_most_liked_movies_by_{}".format(num,age_group)).mode("overwrite").save()
+
+    def save_top_n_most_viewed_movies_by_age(self, num: int, age_group: str):
+        my_udf = F.udf(Utils.get_age_group2, StringType())
+        users = self.users_df.withColumn("AgeGroup", my_udf("Age"))
+        join1 = self.ratings_df.join(users, on="UserID" , how="inner").filter(col("AgeGroup") == age_group)
+        join2 = join1.join(self.movies_df, on="MovieID", how="inner")
+        result = join2.groupBy("MovieID", "Title").agg(F.count("UserID").alias("Viewers")).orderBy(col("Viewers").desc()).limit(num)
+        result = result.drop("MovieID")
+        result.write.format("mongo").option("database", "movielens").option("collection", "top_{}_most_viewed_movies_by_{}".format(num,age_group)).mode("overwrite").save()
+
 
 
 if __name__ == '__main__':
@@ -198,5 +219,8 @@ if __name__ == '__main__':
     sparkdp.save_all_movie_ratings()
     sparkdp.save_occupation_genre_distribution()
     sparkdp.save_age_genre_distribution()
+    for age in sparkdp.ageGroup2:
+        sparkdp.save_top_n_most_liked_movies_by_age(10, age)
+        sparkdp.save_top_n_most_viewed_movies_by_age(10, age)
     
 
