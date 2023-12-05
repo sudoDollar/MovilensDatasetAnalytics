@@ -8,7 +8,7 @@ class MongoEngine:
         # Access a specific database
         self.db = client["movielens"]
     
-    def getGenereList(self):
+    def getGenreList(self):
         return [genre["genre"] for genre in self.db["genres"].find({}, {"genre": 1, "_id": 0})]
     
     def getYearList(self):

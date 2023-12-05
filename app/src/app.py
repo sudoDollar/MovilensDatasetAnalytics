@@ -49,8 +49,8 @@ def get_movies_filter():
     
     if filter == '':
         return jsonify([])
-    if filter == 'genere':
-        return me.getGenereList()
+    if filter == 'genre':
+        return me.getGenreList()
     if filter == 'gender':
         return jsonify(['M','F'])
 
@@ -76,6 +76,6 @@ def getGraphJSON(filter: str = ''):
     movie, viewers = zip(*graphData)
     fig = px.bar(x=movie, y=viewers, text=movie)  # Set the text attribute to movie values
     fig.update_traces(textposition='inside')  # Set the text position inside the bar
-    fig.update_layout(title='Top 10 Movies', xaxis_title='Movies', xaxis={'visible': True, 'showticklabels': False})
+    fig.update_layout(xaxis_title='Movies', xaxis={'visible': True, 'showticklabels': False}, yaxis_title='Number of Viewers')
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
     return graphJSON
