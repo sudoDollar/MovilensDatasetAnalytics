@@ -43,35 +43,39 @@ def get_movies():
     # Convert the movies to a JSON response
     return jsonify(movies)
 
+@app.route('/api/movieFilter', methods=['GET'])
+def get_movies_filter():
+    filter = request.args.get('filter')
+    
+    if filter == '':
+        return jsonify([])
+    if filter == 'genere':
+        return me.getGenereList()
+    if filter == 'gender':
+        return jsonify(['M','F'])
+
 
 @app.route('/graphs')
 def graphs():
-    return render_template('graphs.html', graphJSON = getGraphJSON())
+    return render_template('graphs.html')
 
 @app.route('/callback', methods = ['POST','GET'])
 def cb():
-    dateRange = request.args.get('dateRange')
-    startDate, endDate = dateRange.split('-')
-    format = "%m/%d/%Y %I:%M %p"
-    startDate = datetime.datetime.strptime(startDate.rstrip().lstrip(), format)
-    endDate = datetime.datetime.strptime(endDate.rstrip().lstrip(), format)
-    tableName = request.args.get('tableName')
-    return getGraphJSON(tableName, startDate, endDate)
-
+    filterCondition = request.args.get('filter')
+    
+    graphData = getGraphJSON(filter = filterCondition)
+    print(filterCondition)
+    return graphData
 
 
 #generate graph and it's JSON to pass to the html template 
 #startDate and endDate to load data for user defined time period
 #Change this function as per requirement. Currently it reads from sql table and returns JSON
-def getGraphJSON(tableName: str = 'Temperature', startDate: datetime = (datetime.datetime.now() + relativedelta(months=-1)), endDate: datetime = datetime.datetime.now()):
-    conn = get_db_connection()
-    psqlTable = constants.dropdownTableMap[tableName]
-    query = 'select time,value FROM public.\"{0}\" where time > timestamp \'{1}\' and time < timestamp \'{2}\' order by time;'.format(psqlTable, startDate, endDate)
-    global dataFrame
-    dataFrame = pd.read_sql(query,conn)
-    conn.close()
-    global dfMetadata
-    dfMetadata = '{0}_{1}_{2}'.format(tableName, startDate, endDate).replace(" ", "_")
-    fig = px.line(dataFrame,x='time',y='value')
-    graphJSON = json.dumps(fig,cls = plotly.utils.PlotlyJSONEncoder)
+def getGraphJSON(filter: str = ''):
+    graphData = me.get_top_viewed_by_filter(filter)
+    movie, viewers = zip(*graphData)
+    fig = px.bar(x=movie, y=viewers, text=movie)  # Set the text attribute to movie values
+    fig.update_traces(textposition='inside')  # Set the text position inside the bar
+    fig.update_layout(title='Top 10 Movies', xaxis_title='Movies', xaxis={'visible': True, 'showticklabels': False})
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
     return graphJSON
