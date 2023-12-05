@@ -28,6 +28,59 @@ class Utils:
             "19":  "unemployed",
             "20":  "writer"
     }
+
+    us_states_dict = {
+            'AL': 'Alabama',
+            'AK': 'Alaska',
+            'AZ': 'Arizona',
+            'AR': 'Arkansas',
+            'CA': 'California',
+            'CO': 'Colorado',
+            'CT': 'Connecticut',
+            'DE': 'Delaware',
+            'FL': 'Florida',
+            'GA': 'Georgia',
+            'HI': 'Hawaii',
+            'ID': 'Idaho',
+            'IL': 'Illinois',
+            'IN': 'Indiana',
+            'IA': 'Iowa',
+            'KS': 'Kansas',
+            'KY': 'Kentucky',
+            'LA': 'Louisiana',
+            'ME': 'Maine',
+            'MD': 'Maryland',
+            'MA': 'Massachusetts',
+            'MI': 'Michigan',
+            'MN': 'Minnesota',
+            'MS': 'Mississippi',
+            'MO': 'Missouri',
+            'MT': 'Montana',
+            'NE': 'Nebraska',
+            'NV': 'Nevada',
+            'NH': 'New Hampshire',
+            'NJ': 'New Jersey',
+            'NM': 'New Mexico',
+            'NY': 'New York',
+            'NC': 'North Carolina',
+            'ND': 'North Dakota',
+            'OH': 'Ohio',
+            'OK': 'Oklahoma',
+            'OR': 'Oregon',
+            'PA': 'Pennsylvania',
+            'RI': 'Rhode Island',
+            'SC': 'South Carolina',
+            'SD': 'South Dakota',
+            'TN': 'Tennessee',
+            'TX': 'Texas',
+            'UT': 'Utah',
+            'VT': 'Vermont',
+            'VA': 'Virginia',
+            'WA': 'Washington',
+            'WV': 'West Virginia',
+            'WI': 'Wisconsin',
+            'WY': 'Wyoming'
+    }
     
     def __init__(self):
         dtype_dict = {'zip': str, 'state': str}
@@ -40,5 +93,8 @@ class Utils:
         else:
             return "None"
         
-    def get_occupation(code):
+    def get_occupation(code: int) -> str:
         return Utils.occupation_dict[str(code)]
+    
+    def get_state_name(code: str) -> str:
+        return Utils.us_states_dict[code]
