@@ -2,44 +2,81 @@
 {% block content %}
 <div class="card-body p-md-5 mx-md-4 " align="center">
 
-  <h2 class="mt-1 mb-5 pb-1">Bioreactor Data</h2>
+  <h2 class="mt-1 mb-5 pb-1">Latest trends</h2>
   <div class="card m-auto" style="width: 90%; height: 70%;">
     <div class="card-body">
+      <div class="btn-group" role="group" aria-label="Toggle Button">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="filterData('')" id="Btn">No
+          filter</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="filterData('gender')"
+          id="genderBtn">Gender</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="filterData('genere')"
+          id="genereBtn">Genere</button>
+      </div>
 
-      <div class="row">
-        <div class="col-sm">
-          <input id="datetimes" name="datetimes" style="width: 80%;" />
-          <script>
-            $(function () {
-              $('input[name="datetimes"]').daterangepicker({
-                timePicker: true,
-                startDate: moment().startOf('month').add(-1, 'month'),
-                endDate: moment(),
-                locale: {
-                  format: 'MM/DD/YYYY hh:mm A'
-                }
+      <div id="dropdownContainer"></div>
+
+      <script>
+        function filterData(filter) {
+          // Add your logic here to filter the data based on the selected filter
+
+          var buttons = document.querySelectorAll('.btn');
+          buttons.forEach(function (button) {
+            button.classList.remove('active');
+          });
+
+          // Add the 'active' class to the clicked button
+          var clickedButton = document.getElementById(filter + 'Btn');
+          clickedButton.classList.add('active');
+
+          console.log("Filter selected:", filter);
+          var url = "/api/movieFilter?filter=" + filter;
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", url, true);
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+              var filterData = JSON.parse(xhr.responseText);
+              var dropdown = document.createElement("select");
+              dropdown.id = "movieDropdown";
+              dropdown.className = "form-select";
+
+              filterData.forEach(function (data) {
+                var option = document.createElement("option");
+                option.value = data;
+                option.textContent = data;
+                dropdown.appendChild(option);
               });
-            });
-          </script>
-          <button class="btn-sm btn-primary" type="reset" onclick="cb($('#reactorData').val())">Refresh Data</button>
-        </div>
-        <div class="col-sm"><a href="{{url_for('exportToCSV')}}" id="exportCSV" class="btn btn-primary"
-            type="reset">Export To CSV</a></div>
-      </div>
-      <div id="chart1" style="height: 90%;">
-      </div>
-      <select id="reactorData" class="form-select" aria-label="Default select example" onchange="cb(this.value)">
-        <option selected value="Temperature">Temperature</option>
-        <option value="pH">pH</option>
-        <option value="Distilled Oxygen">Distilled Oxygen</option>
-        <option value="Pressure">Pressure</option>
-      </select>
+
+              var container = document.querySelector("#dropdownContainer");
+              if (filter == "") {
+                container.innerHTML = "";
+              } else {
+                container.innerHTML = "Select " + filter + ": ";
+                container.appendChild(dropdown);
+              }
+
+              cb(dropdown.value);
+              // Trigger the function call to cb when dropdown values change
+              dropdown.addEventListener("change", function () {
+                cb(this.value); // Pass the dropdown value to the cb function
+              });
+            }
+          };
+          xhr.send();
+        }
+
+        window.onload = function () {
+          filterData('');
+        };
+      </script>
+
+      <div id="chart1" style="height: 90%;"></div>
     </div>
   </div>
 </div>
 <script>
-  var graph = {{ graphJSON | safe}};
-  Plotly.plot("chart1", graph, {})
+  var graph = {{ graphJSON | safe }};
+  Plotly.plot("chart1", graph, {});
 </script>
 
 {% endblock %}

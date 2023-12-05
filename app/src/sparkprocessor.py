@@ -67,17 +67,16 @@ class SparkDataProcessor:
         distinct_years_rdd.toDF().write.format("mongo").option("database", "movielens").option("collection", "years").mode("overwrite").save()
 
     def save_top_n_most_viewed_movies(self, num):
-        movies = self.ratings_rdd.map(lambda x: x.split("::")[1])
-        movies = movies.map(lambda x: (x,1))
-        movies = movies.reduceByKey(lambda x,y: x + y)
-        top_num_movies = spark.sparkContext.parallelize(movies.sortBy(lambda x: x[1]).take(num))
+        ratings_rdd = self.ratings_rdd
+        movies = ratings_rdd.map(lambda x: (x.split("::")[1], 1))
+        movies = movies.reduceByKey(lambda x, y: x + y)
+        top_num_movies = movies.sortBy(lambda x: x[1], ascending=False).take(num)
         
-        movies_rdd = spark.sparkContext.textFile(Utils.MOVIE_FILE_PATH)
+        movies_rdd = self.movies_rdd
         title_rdd = movies_rdd.map(lambda x: (x.split("::")[0], x.split("::")[1][:-7]))
-        top_num_movies_title = title_rdd.join(top_num_movies).sortBy(lambda x: x[1]).map(lambda x: x[1][0]).map(lambda x: Row(title = x))
-
-        # Save RDD to MongoDB collection
-        top_num_movies_title.toDF().write.format("mongo").option("database", "movielens").option("collection", "top_viewed_movies").mode("overwrite").save()
+        top_num_movies_title = title_rdd.join(spark.sparkContext.parallelize(top_num_movies)).sortBy(lambda x: x[1][1], ascending=False).map(lambda x: (x[1][0], x[1][1]))
+        top_num_movies_title_df = spark.createDataFrame(top_num_movies_title, ["Title", "Views"])
+        top_num_movies_title_df.write.format("mongo").option("database", "movielens").option("collection", "top_viewed_movies").mode("overwrite").save()
 
     def save_top_n_most_liked_movies_by_gender(self, num: int, gender: str):
         join1 = self.ratings_df.join(self.users_df, on="UserID" , how="inner").filter(col("Gender") == gender)
