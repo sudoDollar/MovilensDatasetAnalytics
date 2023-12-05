@@ -1,7 +1,8 @@
 from pyspark.sql import SparkSession, Row
 from pyspark.sql.functions import col, regexp_replace, split, explode, length, expr, from_unixtime
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+from pyspark.sql.window import Window
 import pyspark.sql.functions as F
-import shutil
 from Utils import Utils
 
 class SparkDataProcessor:
@@ -14,6 +15,7 @@ class SparkDataProcessor:
         self.movies_rdd = spark.sparkContext.textFile(Utils.MOVIE_FILE_PATH)
         self.users_rdd = spark.sparkContext.textFile(Utils.USERS_FILE_PATH)
         self.data_clean = False
+        self.ut = Utils()
         
     def load_clean_data_toDF(self):
         #Movies
@@ -28,7 +30,7 @@ class SparkDataProcessor:
         self.ratings_df = df.drop("Timestamp")
 
         #Users
-        self.users_df = self.spark.read.csv(Utils.USERS_FILE_PATH, sep='::', schema='UserID int, Gender string, Age int, Occupation int, Zipcode int')
+        self.users_df = self.spark.read.csv(Utils.USERS_FILE_PATH, sep='::', schema='UserID int, Gender string, Age int, Occupation int, Zipcode string')
 
         self.data_clean = True
     
@@ -105,9 +107,31 @@ class SparkDataProcessor:
         result = join1.groupBy("MovieID", "Title").agg(F.avg("Rating").alias("AvgRating")).orderBy(col("AvgRating").desc()).limit(num)
         result.drop("MovieID")
         result.write.format("mongo").option("database", "movielens").option("collection", "top_{}_most_liked_movies_by_{}".format(num,genre)).mode("overwrite").save()
+    
+    def save_movies_count_by_genre(self):
+        movies = self.movies_df.select("MovieID", explode("Genres").alias("Genre"))
+        genre_count = movies.groupBy("Genre").agg(F.count("MovieID").alias("Count")).orderBy(col("Count").desc())
+        genre_count.write.format("mongo").option("database", "movielens").option("collection", "movies_count_by_genre").mode("overwrite").save()
 
+    def save_movies_count_by_year(self):
+        movies = self.movies_df.select("MovieID", "Year")
+        genre_count = movies.groupBy("Year").agg(F.count("MovieID").alias("Count")).orderBy(col("Year"))
+        genre_count.write.format("mongo").option("database", "movielens").option("collection", "movies_count_by_year").mode("overwrite").save()
 
+    def save_state_genre_distribution(self):
+        movies = self.movies_df.select("MovieID", explode("Genres").alias("Genre"))
+        my_udf = F.udf(self.ut.get_state, StringType())
+        users = self.users_df.withColumn("State", my_udf("Zipcode"))
+        join1 = self.ratings_df.join(users, on="UserID", how="inner")
+        join2 = join1.join(movies, on="MovieID", how="inner")
+        result = join2.groupBy("State", "Genre").agg(F.count("UserID").alias("Count"))
+        result.write.format("mongo").option("database", "movielens").option("collection", "state_genre_distribution").mode("overwrite").save()
 
+        window_spec = Window.partitionBy("State")
+        max_count_column = F.max("Count").over(window_spec)
+        result = result.withColumn("max_count", max_count_column)
+        result = result.filter(col("Count") == col("max_count")).drop("max_count")
+        result.write.format("mongo").option("database", "movielens").option("collection", "state_genre_distribution").mode("overwrite").save()
 
 if __name__ == '__main__':
 
@@ -130,6 +154,10 @@ if __name__ == '__main__':
     for genre in sparkdp.genres:
         sparkdp.save_top_n_most_viewed_movies_by_genre(10, genre)
         sparkdp.save_top_n_most_liked_movies_by_genre(10, genre)
+    sparkdp.save_movies_count_by_genre()
+    sparkdp.save_movies_count_by_year()
+    sparkdp.save_state_genre_distribution()
+
 
 
     
