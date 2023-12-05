@@ -8,6 +8,7 @@ from Utils import Utils
 class SparkDataProcessor:
 
     genres = []
+    ut = Utils()
 
     def __init__(self, spark):
         self.spark = spark
@@ -127,11 +128,11 @@ class SparkDataProcessor:
         result = join2.groupBy("State", "Genre").agg(F.count("UserID").alias("Count"))
         result.write.format("mongo").option("database", "movielens").option("collection", "state_genre_distribution").mode("overwrite").save()
 
-        # window_spec = Window.partitionBy("State")
-        # max_count_column = F.max("Count").over(window_spec)
-        # result = result.withColumn("max_count", max_count_column)
-        # result = result.filter(col("Count") == col("max_count")).drop("max_count")
-        # result.write.format("mongo").option("database", "movielens").option("collection", "state_genre_distribution").mode("overwrite").save()
+        window_spec = Window.partitionBy("State")
+        max_count_column = F.max("Count").over(window_spec)
+        result = result.withColumn("max_count", max_count_column)
+        result = result.filter(col("Count") == col("max_count")).drop("max_count")
+        result.write.format("mongo").option("database", "movielens").option("collection", "state_genre_distribution").mode("overwrite").save()
 
 if __name__ == '__main__':
 
@@ -143,19 +144,19 @@ if __name__ == '__main__':
 
     sparkdp = SparkDataProcessor(spark)
     sparkdp.load_clean_data_toDF()
-    # sparkdp.load_data_into_db()
-    # sparkdp.save_all_genres()
-    # sparkdp.save_all_years()
-    # sparkdp.save_top_n_most_viewed_movies(10)
-    # sparkdp.save_top_n_most_liked_movies_by_gender(10, "M")
-    # sparkdp.save_top_n_most_liked_movies_by_gender(10, "F")
-    # sparkdp.save_top_n_most_viewed_movies_by_gender(10, "M")
-    # sparkdp.save_top_n_most_viewed_movies_by_gender(10, "F")
-    # for genre in sparkdp.genres:
-    #     sparkdp.save_top_n_most_viewed_movies_by_genre(10, genre)
-    #     sparkdp.save_top_n_most_liked_movies_by_genre(10, genre)
-    # sparkdp.save_movies_count_by_genre()
-    # sparkdp.save_movies_count_by_year()
+    sparkdp.load_data_into_db()
+    sparkdp.save_all_genres()
+    sparkdp.save_all_years()
+    sparkdp.save_top_n_most_viewed_movies(10)
+    sparkdp.save_top_n_most_liked_movies_by_gender(10, "M")
+    sparkdp.save_top_n_most_liked_movies_by_gender(10, "F")
+    sparkdp.save_top_n_most_viewed_movies_by_gender(10, "M")
+    sparkdp.save_top_n_most_viewed_movies_by_gender(10, "F")
+    for genre in sparkdp.genres:
+        sparkdp.save_top_n_most_viewed_movies_by_genre(10, genre)
+        sparkdp.save_top_n_most_liked_movies_by_genre(10, genre)
+    sparkdp.save_movies_count_by_genre()
+    sparkdp.save_movies_count_by_year()
     sparkdp.save_state_genre_distribution()
 
 
