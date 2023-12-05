@@ -8,7 +8,6 @@ from Utils import Utils
 class SparkDataProcessor:
 
     genres = []
-    ut = Utils()
 
     def __init__(self, spark):
         self.spark = spark
