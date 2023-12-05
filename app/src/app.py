@@ -50,7 +50,7 @@ def get_movies_filter():
     if filter == '':
         return jsonify([])
     if filter == 'genre':
-        return me.getGenreList()
+        return jsonify(me.getGenreList())
     if filter == 'gender':
         return jsonify(['M','F'])
 
