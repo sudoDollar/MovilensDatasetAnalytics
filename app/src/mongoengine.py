@@ -32,3 +32,11 @@ class MongoEngine:
             return [[movie["Title"], movie["AvgRating"], movie["Year"]] for movie in self.db["all_movie_ratings"].find({"Title": {"$regex": regex_pattern}}, {"Title": 1, "AvgRating": 1, "Year": 1, "_id": 0}).limit(20)]
         else:
             return [[movie["Title"], movie["AvgRating"], movie["Year"]] for movie in self.db["all_movie_ratings"].find({}, {"Title": 1, "AvgRating": 1, "Year": 1, "_id": 0}).limit(20)]
+
+    def get_top_rated_by_filter(self, filter):
+        if not filter or filter == "":
+            topMovieData = self.getTopRatedMovies()[:10]
+            returnData = [[movie[0],movie[1]] for movie in topMovieData]
+            return returnData
+        tableName = "top_10_most_liked_movies_by_{}".format(filter)
+        return [[movie["Title"],movie["AvgRating"]] for movie in self.db[tableName].find({}, {"Title": 1, "AvgRating": 1, "_id": 0})]

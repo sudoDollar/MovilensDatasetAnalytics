@@ -15,8 +15,9 @@ function searchMovie() {
 
       var tableBody = document.querySelector("#table2 tbody");
 
-      if (movies.length == 0) {
+      if (movies.length == 0 || movie == "") {
         tableBody.innerHTML = "<tr><td colspan='3'>No movies found</td></tr>";
+        return;
       }
       else { tableBody.innerHTML = ""; }
 

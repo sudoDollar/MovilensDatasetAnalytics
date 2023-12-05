@@ -55,25 +55,39 @@ def get_movies_filter():
         return jsonify(['M','F'])
 
 
-@app.route('/graphs')
-def graphs():
-    return render_template('graphs.html')
+@app.route('/topViewed')
+def topViewed():
+    return render_template('topViewed.html')
+
+@app.route('/topRated')
+def topRated():
+    return render_template('topRated.html')
 
 @app.route('/callback', methods = ['POST','GET'])
 def cb():
     filterCondition = request.args.get('filter')
-    graphData = getGraphJSON(filter = filterCondition)
-    return graphData
+    graph = request.args.get('graph')
+    if graph == 'mostViewed':
+        return getTopViewedGraphJSON(filterCondition)
+    if graph == "topRated":
+        return getTopRatedGraphJSON(filterCondition)
 
 
 #generate graph and it's JSON to pass to the html template 
 #startDate and endDate to load data for user defined time period
 #Change this function as per requirement. Currently it reads from sql table and returns JSON
-def getGraphJSON(filter: str = ''):
+def getTopViewedGraphJSON(filter: str = ''):
     graphData = me.get_top_viewed_by_filter(filter)
-    movie, viewers = zip(*graphData)
-    fig = px.bar(x=movie, y=viewers, text=movie)  # Set the text attribute to movie values
+    return createGraphJSON(graphData, "Movies", "Views")
+
+def getTopRatedGraphJSON(filter: str=''):
+    graphData = me.get_top_rated_by_filter(filter)
+    return createGraphJSON(graphData, "Movies", "Average Rating")
+    
+def createGraphJSON(graphData, xaxisTitle, yAxisTitle):
+    movie, yData = zip(*graphData)
+    fig = px.bar(x=movie, y=yData, text=movie)  # Set the text attribute to movie values
     fig.update_traces(textposition='inside')  # Set the text position inside the bar
-    fig.update_layout(xaxis_title='Movies', xaxis={'visible': True, 'showticklabels': False}, yaxis_title='Number of Viewers')
+    fig.update_layout(xaxis_title=xaxisTitle, xaxis={'visible': True, 'showticklabels': False}, yaxis_title=yAxisTitle)
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
     return graphJSON

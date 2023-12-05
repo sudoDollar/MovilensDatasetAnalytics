@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card-body p-md-5 mx-md-4 " align="center">
+
+  <h2 class="mt-1 mb-5 pb-1">Top 10 Rated movies</h2>
+  <div class="card m-auto" style="width: 90%; height: 70%;">
+    <div class="card-body">
+      <div class="btn-group" role="group" aria-label="Toggle Button">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="filterData('')" id="Btn">No
+          filter</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="filterData('gender')"
+          id="genderBtn">Gender</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="filterData('genre')"
+          id="genreBtn">Genre</button>
+      </div>
+
+      <div id="dropdownContainer"></div>
+      <div id="chart1" style="height: 90%;"></div>
+    </div>
+  </div>
+</div>
+<script>
+  var graph = {{ graphJSON | safe }};
+  Plotly.plot("chart1", graph, {});
+</script>
+
+{% endblock %}
