@@ -42,10 +42,16 @@ class MongoEngine:
         return [[movie["Title"],movie["AvgRating"]] for movie in self.db[tableName].find({}, {"Title": 1, "AvgRating": 1, "_id": 0})]
     
     def get_unique_age_groups(self):
-        return list(set([age["AgeGroup"] for age in self.db["age_genre_distribution"].find({}, {"AgeGroup": 1, "_id": 0})]))
+        return set([age["AgeGroup"] for age in self.db["age_genre_distribution"].find({}, {"AgeGroup": 1, "_id": 0})])
 
     def get_genre_occupation_distribution(self, occupation):
         return [[genre["Genre"], genre["Count"]] for genre in self.db["occupation_genre_distribution"].find({"OccupationName": occupation}, {"Genre": 1, "Count": 1, "_id": 0})]
     
     def get_genre_age_distribution(self, ageGroup):
         return [[genre["Genre"], genre["Count"]] for genre in self.db["age_genre_distribution"].find({"AgeGroup": ageGroup}, {"Genre": 1, "Count": 1, "_id": 0})]
+    
+    def get_state_genre_distribution(self, state):
+        return [[genre["Genre"], genre["Count"]] for genre in self.db["state_genre_distribution"].find({"State": state}, {"Genre": 1, "Count": 1, "_id": 0})]
+    
+    def get_state_maxViewed_genre_dist(self):
+        return [[hmap["State"],hmap["Genre"]] for hmap in self.db["state_genre_max"].find({}, {"State": 1, "Genre": 1 , "_id": 0})]

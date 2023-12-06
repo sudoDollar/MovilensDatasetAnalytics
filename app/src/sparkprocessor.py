@@ -8,8 +8,8 @@ from Utils import Utils
 class SparkDataProcessor:
 
     genres = []
-    ageGroup = ["1-5", "6-10", "11-15", "16-20", "21-25", "26-30", "31-35", "36-40", "41-45", "46-50", "51-55", "56-60"]
-    ageGroup2 = ["1-10", "11-20", "21-30", "31-40", "41-50", "51-60"]
+    ageGroup = Utils.ageGroup
+    ageGroup2 = Utils.ageGroup2
 
 
     def __init__(self, spark):

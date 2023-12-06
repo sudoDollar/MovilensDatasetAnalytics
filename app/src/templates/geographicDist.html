@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card-body" align="center">
+    <script type="text/javascript" src="{{ url_for('static', filename='js/geographicDist.js') }}"></script>
+
+
+    <div class="row g-0">
+        <div class="col-lg-6">
+            <div id="dropdownContainerState">
+                <label for="stateDropdown">Choose State:</label>
+                <select id="stateDropdown" onchange="getStateDistPieChart(this.value)">
+                    {% for stateCode, stateName in stateDict.items() %}
+                    <option value="{{ stateCode }}">{{ stateName }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="pieChartState"></div>
+        </div>
+        <div class="col-lg-6">
+
+            <div id="stateChartDist"></div>
+        </div>
+    </div>
+</div>
+<script>
+    var graph1 = {{ graphJSON1 | safe }};
+    Plotly.plot("pieChartState", graph1, {});
+    var graph2 = {{ graphJSON2 | safe }};
+    Plotly.plot("stateChartDist", graph2, {});
+</script>
+
+{% endblock %}

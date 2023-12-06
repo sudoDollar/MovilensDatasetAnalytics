@@ -5,6 +5,10 @@ class Utils:
     RATINGS_FILE_PATH = "Dataset/ratings.dat"
     USERS_FILE_PATH = "Dataset/users.dat"
     zipcode_file_path = "Dataset/zip_code_database.csv"
+    
+    ageGroup = ["1-5", "6-10", "11-15", "16-20", "21-25", "26-30", "31-35", "36-40", "41-45", "46-50", "51-55", "56-60"]
+    ageGroup2 = ["1-10", "11-20", "21-30", "31-40", "41-50", "51-60"]
+    
     occupation_dict = {
             "1":  "academic/educator",
             "2":  "artist",

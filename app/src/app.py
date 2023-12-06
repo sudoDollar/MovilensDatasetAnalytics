@@ -4,6 +4,7 @@ import pandas as pd
 import json
 import plotly
 import plotly.express as px
+import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta
 import shutil
 from pyspark.sql import SparkSession
@@ -95,21 +96,58 @@ def createGraphJSON(graphData, xaxisTitle, yAxisTitle):
 @app.route('/genreDistribution')
 def genreDistribution():
     occupationList = list(Utils.occupation_dict.values())
-    ageGroupList = sorted(me.get_unique_age_groups())
+    uniqueAgeGroups = me.get_unique_age_groups()
+    ageGroupList = []
+    for ageGroup in Utils.ageGroup:
+        if ageGroup in uniqueAgeGroups:
+            ageGroupList.append(ageGroup)
     return render_template('genreDistribution.html', occupations = occupationList, ageGroupList = ageGroupList)
 
 @app.route('/getGenreOccupationChart')
 def getGenreOccupationChart():
-    graphData = me.get_genre_occupation_distribution(request.args.get('occupation'))
-    return createPieChartJSON(graphData, 'Occupation')
+    occupation = request.args.get('occupation')
+    graphData = me.get_genre_occupation_distribution(occupation)
+    return createPieChartJSON(graphData, 'Occupation', occupation)
     
 @app.route('/getGenreAgeChart')
 def getGenreAgeChart():
-    graphData = me.get_genre_age_distribution(request.args.get('ageGroup'))
-    return createPieChartJSON(graphData, 'Age Group')
+    ageGroup = request.args.get('ageGroup')
+    graphData = me.get_genre_age_distribution(ageGroup)
+    return createPieChartJSON(graphData, 'Age Group', ageGroup)
     
-def createPieChartJSON(graphData, title):
+def createPieChartJSON(graphData, title, filter):
     genre, yData = zip(*graphData)
-    fig = px.pie(values=yData, names=genre, title='Genre Distribution by '+title)
+    
+    # fig = go.Figure(go.Pie(
+    #     title= {
+    #         'text': 'Genre Distribution by '+title + ' ' + filter,
+    #         'font': {'size': 24}
+    #     },
+    #     values=yData,
+    #     labels=genre,
+    #     hovertemplate="%{label}: <br>ViewerCount: %{value}",
+    # ))
+    fig = px.pie(values=yData, names=genre,labels=genre ,title='Genre Distribution by '+title + ' ' + filter)
+    fig.update_traces(hovertemplate="%{label}: <br>ViewerCount: %{value}")
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return graphJSON
+
+
+@app.route('/geographicDist')
+def geographicDist():
+    return render_template('geographicDist.html', stateDict = Utils.us_states_dict)
+
+@app.route('/getStateGenrePieChart')
+def getStateGenrePieChart():
+    state =  request.args.get('state')
+    graphData = me.get_state_genre_distribution(state)
+    return createPieChartJSON(graphData, 'State', state)
+
+@app.route('/getStateChartDist')
+def stateChartDist():
+    graphData = me.get_state_maxViewed_genre_dist()
+    state, genre = zip(*graphData)
+    fig = px.choropleth(title = "Most viewed genre per state in USA", locations=state, locationmode="USA-states", color=genre, scope="usa")
+    fig.update_traces(hovertemplate="%{location}")
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
     return graphJSON

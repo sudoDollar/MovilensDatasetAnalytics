@@ -7,8 +7,7 @@ function getOccupationChart(occupation = 'academic/educator') {
     });
   }
 
-  function getAgeChart(ageGroup = '16-20') {
-    console.log(ageGroup)
+  function getAgeChart(ageGroup = '6-10') {
     jQuery.getJSON({
       url: "/getGenreAgeChart", data: { 'ageGroup': ageGroup}, success: function (result) {
         Plotly.newPlot('chartAge', result, {})
