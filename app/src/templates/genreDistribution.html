@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card-body" align="center">
+    <script type="text/javascript" src="{{ url_for('static', filename='js/genreDistribution.js') }}"></script>
+
+
+    <div class="row g-0">
+        <div class="col-lg-6">
+            <div id="dropdownContainerOccupation">
+                <label for="occupationDropdown">Occupation:</label>
+                <select id="occupationDropdown" onchange="getOccupationChart(this.value)">
+                    {% for occupation in occupations %}
+                    <option value="{{ occupation }}">{{ occupation }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="chartOccupation"></div>
+        </div>
+        <div class="col-lg-6">
+
+            <div id="dropdownContainerAge">
+                <label for="ageDropdown">Age Group:</label>
+                <select id="ageDropdown" onchange="getAgeChart(this.value)">
+                    {% for ageGroup in ageGroupList %}
+                    <option value="{{ ageGroup }}">{{ ageGroup }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="chartAge"></div>
+        </div>
+    </div>
+</div>
+<script>
+    var graph1 = {{ graphJSON1 | safe }};
+    Plotly.plot("chartOccupation", graph1, {});
+    var graph2 = {{ graphJSON2 | safe }};
+    Plotly.plot("chartAge", graph2, {});
+</script>
+
+{% endblock %}

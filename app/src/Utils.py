@@ -6,7 +6,6 @@ class Utils:
     USERS_FILE_PATH = "Dataset/users.dat"
     zipcode_file_path = "Dataset/zip_code_database.csv"
     occupation_dict = {
-        	"0":  "other",
             "1":  "academic/educator",
             "2":  "artist",
             "3":  "clerical/admin",
@@ -26,7 +25,8 @@ class Utils:
             "17":  "technician/engineer",
             "18":  "tradesman/craftsman",
             "19":  "unemployed",
-            "20":  "writer"
+            "20":  "writer",
+            "0":  "other"
     }
 
     us_states_dict = {

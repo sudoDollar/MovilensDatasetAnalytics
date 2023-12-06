@@ -9,6 +9,7 @@ import shutil
 from pyspark.sql import SparkSession
 from sparkengine import SparkEngine
 from mongoengine import MongoEngine
+from Utils import Utils
 
 spark = SparkSession.builder.appName("movielens").master('local') \
                     .config("spark.mongodb.input.uri", "mongodb://127.0.0.1:27017/movielens") \
@@ -72,7 +73,6 @@ def cb():
     if graph == "topRated":
         return getTopRatedGraphJSON(filterCondition)
 
-
 #generate graph and it's JSON to pass to the html template 
 #startDate and endDate to load data for user defined time period
 #Change this function as per requirement. Currently it reads from sql table and returns JSON
@@ -83,11 +83,33 @@ def getTopViewedGraphJSON(filter: str = ''):
 def getTopRatedGraphJSON(filter: str=''):
     graphData = me.get_top_rated_by_filter(filter)
     return createGraphJSON(graphData, "Movies", "Average Rating")
-    
+
 def createGraphJSON(graphData, xaxisTitle, yAxisTitle):
     movie, yData = zip(*graphData)
     fig = px.bar(x=movie, y=yData, text=movie)  # Set the text attribute to movie values
     fig.update_traces(textposition='inside')  # Set the text position inside the bar
     fig.update_layout(xaxis_title=xaxisTitle, xaxis={'visible': True, 'showticklabels': False}, yaxis_title=yAxisTitle)
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return graphJSON
+
+@app.route('/genreDistribution')
+def genreDistribution():
+    occupationList = list(Utils.occupation_dict.values())
+    ageGroupList = sorted(me.get_unique_age_groups())
+    return render_template('genreDistribution.html', occupations = occupationList, ageGroupList = ageGroupList)
+
+@app.route('/getGenreOccupationChart')
+def getGenreOccupationChart():
+    graphData = me.get_genre_occupation_distribution(request.args.get('occupation'))
+    return createPieChartJSON(graphData, 'Occupation')
+    
+@app.route('/getGenreAgeChart')
+def getGenreAgeChart():
+    graphData = me.get_genre_age_distribution(request.args.get('ageGroup'))
+    return createPieChartJSON(graphData, 'Age Group')
+    
+def createPieChartJSON(graphData, title):
+    genre, yData = zip(*graphData)
+    fig = px.pie(values=yData, names=genre, title='Genre Distribution by '+title)
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
     return graphJSON

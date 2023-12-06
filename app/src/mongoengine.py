@@ -40,3 +40,12 @@ class MongoEngine:
             return returnData
         tableName = "top_10_most_liked_movies_by_{}".format(filter)
         return [[movie["Title"],movie["AvgRating"]] for movie in self.db[tableName].find({}, {"Title": 1, "AvgRating": 1, "_id": 0})]
+    
+    def get_unique_age_groups(self):
+        return list(set([age["AgeGroup"] for age in self.db["age_genre_distribution"].find({}, {"AgeGroup": 1, "_id": 0})]))
+
+    def get_genre_occupation_distribution(self, occupation):
+        return [[genre["Genre"], genre["Count"]] for genre in self.db["occupation_genre_distribution"].find({"OccupationName": occupation}, {"Genre": 1, "Count": 1, "_id": 0})]
+    
+    def get_genre_age_distribution(self, ageGroup):
+        return [[genre["Genre"], genre["Count"]] for genre in self.db["age_genre_distribution"].find({"AgeGroup": ageGroup}, {"Genre": 1, "Count": 1, "_id": 0})]
