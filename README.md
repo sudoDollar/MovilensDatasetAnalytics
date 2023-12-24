@@ -5,6 +5,7 @@ CS-GY 6153 Big Data Project (New York University)
 ![Static Badge](https://img.shields.io/badge/Big_Data_Processor-Spark-blue)
 ![Static Badge](https://img.shields.io/badge/Web-Flask-blue)
 ![Static Badge](https://img.shields.io/badge/Data_Warehouse-MongoDB-blue)
+![Static Badge](https://img.shields.io/badge/plotly.py-green)
 
 Data Source: [MovieLens 1M Dataset](https://grouplens.org/datasets/movielens/1m/)
 
