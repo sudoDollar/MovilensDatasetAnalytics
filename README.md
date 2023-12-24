@@ -1,5 +1,5 @@
 # MovilensDatasetAnalytics
-CS-GY 6153 Big Data Project
+CS-GY 6153 Big Data Project (New York University)
 
 ![Static Badge](https://img.shields.io/badge/Language-Python-blue)
 ![Static Badge](https://img.shields.io/badge/Big_Data_Processor-Spark-blue)
