@@ -2,5 +2,5 @@
 CS-GY 6153 Big Data Project
 
 
-![Static Badge](https://img.shields.io/badge/Language-Python)
+![Static Badge](https://img.shields.io/badge/any_text-you_like-blue)
 
