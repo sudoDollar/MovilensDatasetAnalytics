@@ -11,5 +11,4 @@ CS-GY 6153 Big Data Project
 ![Alt text](processed_data/21_25_genre.png?raw=true "Title")
 ![Alt text](processed_data/genre_NY.png?raw=true "Title")
 ![Alt text](processed_data/programmer_genre.png?raw=true "Title")
-![Alt text](processed_data/top_rated_genre.png?raw=true "Title")
 
