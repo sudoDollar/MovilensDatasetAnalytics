@@ -9,6 +9,9 @@ CS-GY 6153 Big Data Project (New York University)
 
 Data Source: [MovieLens 1M Dataset](https://grouplens.org/datasets/movielens/1m/)
 
+### Data Pipeline:
+![Alt text](processed_data/data_pipeline.png?raw=true "Title")
+
 ![Alt text](processed_data/usa_genre.png?raw=true "Title")
 ![Alt text](processed_data/21_25_genre.png?raw=true "Title")
 ![Alt text](processed_data/genre_NY.png?raw=true "Title")
